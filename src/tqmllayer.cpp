@@ -2,6 +2,7 @@
 
 #include "tqmllayer.h"
 #include "fn_log.h"
+#include "Globals.h"
 
 TQMLLayer::TQMLLayer(QObject *parent)
     : QObject{parent}
@@ -60,6 +61,49 @@ void TQMLLayer::processGetPorts()
 void TQMLLayer::openPort(QString sPort)
 {
     LogInfo() << "Open port '" << sPort.toStdString() << "'";
+    df64.InitDF64(sPort.toLocal8Bit().data());
+    emit infoStringChanged();
+}
+
+void TQMLLayer::changeState()
+{
+    LogDebug() << "Change device poll state request";
+    df64.ChangeState();
+    emit stateChanged();
+}
+
+QString TQMLLayer::GetDeviceInfoString()
+{
+    return df64.GetDeviceInfo().c_str();
+}
+
+QString TQMLLayer::GetDevNextStateString()
+{
+    QString sRet = "";
+    switch(df64.GetCurrState()) {
+    case 2:
+    case 3:
+        sRet = "Остановить";
+        break;
+    default:
+        sRet = "Запустить";
+    }
+
+    return sRet;
+}
+
+QString TQMLLayer::GetDataString()
+{
+    return QString("Distance: %1 Amp %2 Temp %3").arg(
+        QString::number(df64.GetCurrDistance()),
+        QString::number(df64.GetCurrAmp()),
+        QString::number(df64.GetCurrTemp())
+    );
+}
+
+void TQMLLayer::dataChanged()
+{
+    emit dataStringChanged();
 }
 
 

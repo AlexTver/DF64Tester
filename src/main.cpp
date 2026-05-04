@@ -9,14 +9,14 @@
 int main(int argc, char *argv[])
 {
 
-    // qDebug("Luna tester start");
+    // qDebug("Df64 tester start");
     int LogInit = FNLog::LoadAndStartDefaultLogger("./log_param.yaml");
 
     if (LogInit != 0) {
         std::cerr << "Ошибка инициализации логгера" << std::endl;
         LogInit = FNLog::FastStartDefaultLogger();
     }
-    LogInfo() << "Luna tester start";
+    LogInfo() << "Df64 tester start";
 
     QGuiApplication app(argc, argv);
 

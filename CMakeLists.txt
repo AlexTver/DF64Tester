@@ -27,6 +27,7 @@ qt_add_qml_module(appDf64Tester
     SOURCES src/Globals.cpp
     SOURCES src/Globals.h
     SOURCES src/tqmllayer.h src/tqmllayer.cpp
+    SOURCES src/df64iface.cpp src/df64iface.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

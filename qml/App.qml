@@ -65,19 +65,75 @@ Window {
             height: 52
             model: qmlLayer.listComPorts
         }
+
+        // Rectangle {
+            // id: infoBlock
+            Text {
+                id: headerTFInfo
+                x: 18
+                y: btnOpen.y + btnOpen.height + 5
+                // width: 561
+                height: 40
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Подключенный модуль:")
+                font.pixelSize: 12
+            }
+            Text {
+                id: txtTFInfo
+                x: headerTFInfo.x + headerTFInfo.width + 5
+                y: btnOpen.y + btnOpen.height + 5
+                // width: 561
+                height: 40
+                verticalAlignment: Text.AlignVCenter
+                // text: qmlLayer.listComPortsString
+                text: qmlLayer.deviceInfoString
+                font.pixelSize: 12
+            }
+            Button {
+                id: btnActivate
+                x: 18
+                y: headerTFInfo.y + headerTFInfo.height + 5
+                width: 117
+                height: 40
+                text: qmlLayer.devNextState
+                onClicked: {
+                    qmlLayer.changeState()
+                }
+            }
+            Text {
+                id: headerTFData
+                x: btnActivate.x + btnActivate.width + 5
+                y: headerTFInfo.y + headerTFInfo.height + 5
+                // width: 561
+                height: 40
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Текущие данные:")
+                font.pixelSize: 12
+            }
+            Text {
+                id: txtTFData
+                x: headerTFData.x + headerTFData.width + 5
+                y: headerTFInfo.y + headerTFInfo.height + 5
+                // width: 561
+                height: 40
+                verticalAlignment: Text.AlignVCenter
+                text: qmlLayer.dataString
+                font.pixelSize: 12
+            }
+        // }
+        // TextArea {
+        //     id: txtLog
+        //     x: 18
+        //     y: 153
+        //     width: 764
+        //     height: 431
+        //     color: "black"
+        //     //text: qsTr("Многострочный\nтекст")
+        //     wrapMode: Text.WordWrap
+        //     placeholderText: qsTr("Text Area")
+        // }
     }
 
-    TextArea {
-        id: txtLog
-        x: 18
-        y: 153
-        width: 764
-        height: 431
-        color: "black"
-        //text: qsTr("Многострочный\nтекст")
-        wrapMode: Text.WordWrap
-        placeholderText: qsTr("Text Area")
-    }
 
     function execGetPorts() {
         qmlLayer.processGetPorts()
