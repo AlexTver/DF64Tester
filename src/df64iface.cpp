@@ -190,6 +190,7 @@ void TDF64Iface::ProcessLongRead() {
     unsigned long r; // фактически прочитано
     size_t iToReadLen = 1; //начинаем по 1 байту
     uint8_t answ[255];
+    answ[254] = 0x00;
     size_t answLen;
     uint8_t checksum = 0;
     int locDistance;
@@ -200,6 +201,8 @@ void TDF64Iface::ProcessLongRead() {
         if (!prefixFind && !fullDataFind)
             PurgeComm(portFD, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
         ReadFile(portFD, &answ[i], iToReadLen, &r, NULL);
+        answ[254] = 0x00;
+        LogTrace() << (char*)(&answ[i]);
         if (r) {
             if ((!prefixFind) && (answ[i] == 0x59)) {
                 prefixFind = true;
@@ -306,7 +309,9 @@ bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadL
     do
     {
         ReadFile(portFD, &MesRet[i], iToReadLen, &r, NULL);
-        // LogTrace() << "Read " << r << " bytes";
+        LogTrace() << "Read " << r << " bytes";
+        MesRet[254] = 0x00;
+        LogTrace() << (char*)(&MesRet[i]);
         if (r >= iToReadLen) {
             if ((!prefixFind) && (MesRet[i] == prefix)) { //кажись то что надо
                 prefixFind = true;
