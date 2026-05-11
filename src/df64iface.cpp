@@ -13,7 +13,7 @@ TDF64Iface::TDF64Iface() {
     currDistance = -1;
     currTemp = -273;
     currAmp = -1;
-    sLunaInfo = "";
+    sLidarInfo = "";
     currState = -1; //not started
     bMustStop = true;
 }
@@ -43,30 +43,30 @@ void TDF64Iface::LidarDetect()
     if (currState == -1) {
         currState = 1; //TODO change to mutex lock
         isPresented = false;
-        sLunaInfo = "No device detected";
-        const uint8_t getVerCmd[] = {0x5A, 0x04, 0x14, 0x72};
+        sLidarInfo = "No device detected";
+        // const uint8_t getVerCmd[] = {0x5A, 0x04, 0x14, 0x72};
         PurgeComm(portFD, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
-        sendtoport(getVerCmd, 4);
+        // sendtoport(getVerCmd, 4);
         uint8_t answ[255];
         size_t answLen;
         if (seekAnswer(answ, &answLen, 255, 0x5A, 0x14)) {
-            answ[29] = 0;
-            char *tmp = (char*)&answ[3];
-            // std::string TFInfo = tmp;
-            LogInfo() << "Lidar info: '" << tmp << "'";
-            sLunaInfo = tmp;
-            const uint8_t getQRCode[] = {0x5A, 0x04, 0x12, 0x70};
-            sendtoport(getQRCode, 4);
-            if (seekAnswer(answ, &answLen, 255, 0x5A, 0x12)) {
-                answ[17] = 0;
-                tmp = (char*)&answ[3];
-                sLunaInfo += " QRCode: '";
-                sLunaInfo += tmp;
-                sLunaInfo += "'";
-                // std::string TFInfo = tmp;
-                LogInfo() << "QRCode: '" << tmp << "'";
-                isPresented = true;
-            }
+        //     answ[29] = 0;
+        //     char *tmp = (char*)&answ[3];
+        //     // std::string TFInfo = tmp;
+        //     LogInfo() << "Lidar info: '" << tmp << "'";
+        //     sLidarInfo = tmp;
+        //     const uint8_t getQRCode[] = {0x5A, 0x04, 0x12, 0x70};
+        //     sendtoport(getQRCode, 4);
+        //     if (seekAnswer(answ, &answLen, 255, 0x5A, 0x12)) {
+        //         answ[17] = 0;
+        //         tmp = (char*)&answ[3];
+        //         sLidarInfo += " QRCode: '";
+        //         sLidarInfo += tmp;
+        //         sLidarInfo += "'";
+        //         // std::string TFInfo = tmp;
+        //         LogInfo() << "QRCode: '" << tmp << "'";
+        //         isPresented = true;
+        //     }
         }
         currState = -1;
     }
@@ -87,7 +87,8 @@ bool TDF64Iface::InitDF64(const char *dev)
         SetupComm(portFD,300,300);
         DCB dcb;
         GetCommState(portFD, &dcb);
-        dcb.BaudRate = CBR_115200;
+        // dcb.BaudRate = CBR_115200;
+        dcb.BaudRate = CBR_9600;
         dcb.ByteSize = 8;
         dcb.Parity = NOPARITY;
         dcb.StopBits = ONESTOPBIT;
@@ -260,7 +261,7 @@ void TDF64Iface::ProcessLongRead() {
 
 std::string TDF64Iface::GetDeviceInfo()
 {
-    return sLunaInfo;
+    return sLidarInfo;
 }
 
 bool TDF64Iface::ChangeState()
@@ -304,8 +305,7 @@ bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadL
     bool prefixFind = false;
     bool commandFind = false;
     unsigned long r; // фактически прочитано
-    size_t iToReadLen = 1; //начинаем по 1 байту
-
+    size_t iToReadLen = iMaxReadLen;
     do
     {
         ReadFile(portFD, &MesRet[i], iToReadLen, &r, NULL);

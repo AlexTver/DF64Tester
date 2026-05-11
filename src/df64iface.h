@@ -23,7 +23,7 @@ private:
     DWORD readThreadID;
     void sendtoport(const uint8_t *buf, uint16_t MesLen);
     bool seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen, uint8_t prefix, uint8_t code);
-    std::string sLunaInfo;
+    std::string sLidarInfo;
     volatile int currState;
     volatile bool bMustStop;
 public:
