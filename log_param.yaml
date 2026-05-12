@@ -30,6 +30,15 @@
         disable: false
         out_type: screen
         priority: info
+    -device: 3
+        disable: false
+        out_type: file
+        priority: trace
+        path: "log"
+        file: "$PNAME_trace_$YEAR$MON$DAY"
+        rollback: d4
+        limit_size: 100 m #only support M byte
+        stuff_up: true
  - channel: 1
     sync: sync
     -device: 0

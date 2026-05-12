@@ -2,6 +2,9 @@
 #include <errno.h>
 // #include <fcntl.h>
 
+#include <algorithm>
+#include <iterator>
+
 #include "df64iface.h"
 #include "fn_log.h"
 #include "Globals.h"
@@ -16,6 +19,7 @@ TDF64Iface::TDF64Iface() {
     sLidarInfo = "";
     currState = -1; //not started
     bMustStop = true;
+    memset(distance, 0x00, sizeof(distance));
 }
 
 TDF64Iface::~TDF64Iface()
@@ -49,7 +53,7 @@ void TDF64Iface::LidarDetect()
         // sendtoport(getVerCmd, 4);
         uint8_t answ[255];
         size_t answLen;
-        if (seekAnswer(answ, &answLen, 255, 0x5A, 0x14)) {
+        if (seekAnswer(answ, &answLen, 255)) {
         //     answ[29] = 0;
         //     char *tmp = (char*)&answ[3];
         //     // std::string TFInfo = tmp;
@@ -297,7 +301,7 @@ void TDF64Iface::sendtoport(const uint8_t *buf, uint16_t MesLen)
     LogTrace() << "Sent '" << out << "' bytes";
 }
 //---------------------------------------------------------------------------
-bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen, uint8_t prefix, uint8_t code)
+bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen)
 {
     bool bRet;
     time_t start = time(NULL);
@@ -305,35 +309,42 @@ bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadL
     bool prefixFind = false;
     bool commandFind = false;
     unsigned long r; // фактически прочитано
-    size_t iToReadLen = iMaxReadLen;
+    std::array<uint8_t, 2> toFind = {'y','0'};
+    size_t iToReadLen = ((iMaxReadLen > 64)?64:iMaxReadLen); //читаем по строке
     do
     {
         ReadFile(portFD, &MesRet[i], iToReadLen, &r, NULL);
         LogTrace() << "Read " << r << " bytes";
-        MesRet[254] = 0x00;
+        MesRet[64] = 0x00; // TODO для отладки
         LogTrace() << (char*)(&MesRet[i]);
         if (r >= iToReadLen) {
-            if ((!prefixFind) && (MesRet[i] == prefix)) { //кажись то что надо
+            std::array<uint8_t, 64> arr;
+            auto it = std::begin(arr);
+            it = std::search(it, std::end(arr), std::begin(toFind), std::end(toFind));
+            if (it != end(arr))
                 prefixFind = true;
-                iToReadLen = 2;
-                i += r;
-            } else if ((!commandFind) && (MesRet[i+iToReadLen-1] == code)) {
-                commandFind = true;
-                if (MesRet[i+1] <= (iMaxReadLen - i - 2)) {
-                    iToReadLen = MesRet[i];
-                    i += r;
-                } else {
-                    i = 0; //Мы это вычитать не сможем
-                    prefixFind = false;
-                    commandFind = false;
-                }
-            } else if (prefixFind && commandFind) {
-                bRet = true;
-            } else {
-                i = 0; //Миша всё по новой
-                prefixFind = false;
-                commandFind = false;
-            }
+
+            // if ((!prefixFind) && (MesRet[i] == prefix)) { //кажись то что надо
+            //     prefixFind = true;
+            //     iToReadLen = 2;
+            //     i += r;
+            // } else if ((!commandFind) && (MesRet[i+iToReadLen-1] == code)) {
+            //     commandFind = true;
+            //     if (MesRet[i+1] <= (iMaxReadLen - i - 2)) {
+            //         iToReadLen = MesRet[i];
+            //         i += r;
+            //     } else {
+            //         i = 0; //Мы это вычитать не сможем
+            //         prefixFind = false;
+            //         commandFind = false;
+            //     }
+            // } else if (prefixFind && commandFind) {
+            //     bRet = true;
+            // } else {
+            //     i = 0; //Миша всё по новой
+            //     prefixFind = false;
+            //     commandFind = false;
+            // }
         } else {
             Sleep(100);
         }

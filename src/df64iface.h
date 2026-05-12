@@ -22,10 +22,11 @@ private:
     HANDLE hReadThread;
     DWORD readThreadID;
     void sendtoport(const uint8_t *buf, uint16_t MesLen);
-    bool seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen, uint8_t prefix, uint8_t code);
+    bool seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen);
     std::string sLidarInfo;
     volatile int currState;
     volatile bool bMustStop;
+    uint16_t distance[8][8];
 public:
     TDF64Iface();
     ~TDF64Iface();
