@@ -2,8 +2,8 @@
 #include <errno.h>
 // #include <fcntl.h>
 
-#include <algorithm>
-#include <iterator>
+// #include <algorithm>
+// #include <iterator>
 
 #include "df64iface.h"
 #include "fn_log.h"
@@ -48,29 +48,14 @@ void TDF64Iface::LidarDetect()
         currState = 1; //TODO change to mutex lock
         isPresented = false;
         sLidarInfo = "No device detected";
-        // const uint8_t getVerCmd[] = {0x5A, 0x04, 0x14, 0x72};
         PurgeComm(portFD, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
-        // sendtoport(getVerCmd, 4);
         uint8_t answ[255];
         size_t answLen;
-        if (seekAnswer(answ, &answLen, 255)) {
-        //     answ[29] = 0;
-        //     char *tmp = (char*)&answ[3];
-        //     // std::string TFInfo = tmp;
-        //     LogInfo() << "Lidar info: '" << tmp << "'";
-        //     sLidarInfo = tmp;
-        //     const uint8_t getQRCode[] = {0x5A, 0x04, 0x12, 0x70};
-        //     sendtoport(getQRCode, 4);
-        //     if (seekAnswer(answ, &answLen, 255, 0x5A, 0x12)) {
-        //         answ[17] = 0;
-        //         tmp = (char*)&answ[3];
-        //         sLidarInfo += " QRCode: '";
-        //         sLidarInfo += tmp;
-        //         sLidarInfo += "'";
-        //         // std::string TFInfo = tmp;
-        //         LogInfo() << "QRCode: '" << tmp << "'";
-        //         isPresented = true;
-        //     }
+        if (seekAnswer()) {
+            //TODO заполнить информацией из COM info
+            LogInfo() << "DF64 Lidar detected";
+            sLidarInfo = "DF64";
+            isPresented = true;
         }
         currState = -1;
     }
@@ -302,7 +287,7 @@ void TDF64Iface::sendtoport(const uint8_t *buf, uint16_t MesLen)
     LogTrace() << "Sent '" << out << "' bytes";
 }
 //---------------------------------------------------------------------------
-bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen)
+bool TDF64Iface::seekAnswer()
 {
     bool bRet;
     time_t start = time(NULL);
@@ -311,20 +296,24 @@ bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadL
     bool commandFind = false;
     unsigned long r; // фактически прочитано
     std::array<uint8_t, 2> toFind = {'y','0'};
-    size_t iToReadLen = ((iMaxReadLen > 64)?64:iMaxReadLen); //читаем по строке
+    size_t iToReadLen = ((readBuff.size() > 64)?64:readBuff.size()); //читаем по строке
     do
     {
-        ReadFile(portFD, &MesRet[i], iToReadLen, &r, NULL);
+        ReadFile(portFD, &readBuff[i], iToReadLen, &r, NULL);
         LogTrace() << "Read " << r << " bytes";
-        MesRet[64] = 0x00; // TODO для отладки
-        LogTrace() << (char*)(&MesRet[i]);
+        //для отладки
+        {
+            char MesRet[64];
+            memcpy(MesRet, &readBuff[i], 64);
+            MesRet[63] = 0x00;
+            LogTrace() << (char*)(&MesRet[i]);
+        }
         if (r >= iToReadLen) {
-            std::array<uint8_t, 64> arr;
-            arr.fill(*MesRet);
-            auto it = std::begin(arr);
-            it = std::search(it, std::end(arr), std::begin(toFind), std::end(toFind));
-            if (it != end(arr))
-                prefixFind = true;
+            //ищем сигнатуру yN:
+            auto it = std::begin(readBuff);
+            it = std::search(it, std::end(readBuff), std::begin(toFind), std::end(toFind));
+            if (it != end(readBuff))
+                bRet = true;
 
             // if ((!prefixFind) && (MesRet[i] == prefix)) { //кажись то что надо
             //     prefixFind = true;

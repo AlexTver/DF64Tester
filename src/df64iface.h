@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <stdint.h>
 #include <string>
+#include <array>
 
 class TDF64Iface
 {
@@ -22,11 +23,12 @@ private:
     HANDLE hReadThread;
     DWORD readThreadID;
     void sendtoport(const uint8_t *buf, uint16_t MesLen);
-    bool seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadLen);
+    bool seekAnswer(); //заполнение массива измерений
     std::string sLidarInfo;
     volatile int currState;
     volatile bool bMustStop;
     uint16_t distance[8][8];
+    std::array<uint8_t, 1024> readBuff;
 public:
     TDF64Iface();
     ~TDF64Iface();
