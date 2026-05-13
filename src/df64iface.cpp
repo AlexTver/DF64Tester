@@ -96,6 +96,7 @@ bool TDF64Iface::InitDF64(const char *dev)
         dcb.ByteSize = 8;
         dcb.Parity = NOPARITY;
         dcb.StopBits = ONESTOPBIT;
+        dcb.fDtrControl = DTR_CONTROL_ENABLE;
         if(SetCommState(portFD, &dcb)) {
             COMMTIMEOUTS tms;
             tms.ReadIntervalTimeout = 100;
@@ -319,6 +320,7 @@ bool TDF64Iface::seekAnswer(uint8_t *MesRet, size_t *MesRetLen, size_t iMaxReadL
         LogTrace() << (char*)(&MesRet[i]);
         if (r >= iToReadLen) {
             std::array<uint8_t, 64> arr;
+            arr.fill(*MesRet);
             auto it = std::begin(arr);
             it = std::search(it, std::end(arr), std::begin(toFind), std::end(toFind));
             if (it != end(arr))
