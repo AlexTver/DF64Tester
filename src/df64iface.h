@@ -28,7 +28,7 @@ private:
     volatile int currState;
     volatile bool bMustStop;
     uint16_t distance[8][8];
-    std::array<uint8_t, 1024> readBuff;
+    std::array<char, 1024*4> readBuff;
 public:
     TDF64Iface();
     ~TDF64Iface();

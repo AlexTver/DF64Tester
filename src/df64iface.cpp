@@ -296,42 +296,58 @@ bool TDF64Iface::seekAnswer()
     bool commandFind = false;
     unsigned long r; // фактически прочитано
     std::array<uint8_t, 3> toFind = {'y','0',':'};
+    std::array<uint8_t, 2> toFindEnd = {'\r','\n'};
     uint8_t findIdx = 0;
     size_t iToReadLen = ((readBuff.size() > 64)?64:readBuff.size()); //читаем по строке
+    auto itBegin = &readBuff[i];
+    bool bNextRead = false;
     do
     {
         ReadFile(portFD, &readBuff[i], iToReadLen, &r, NULL);
         LogTrace() << "Read " << r << " bytes";
         //для отладки
         {
-            char MesRet[64];
-            memcpy(MesRet, &readBuff[i], 64);
-            MesRet[63] = 0x00;
-            LogTrace() << (char*)(&MesRet[i]);
+            // char MesRet[64];
+            // memcpy(MesRet, &readBuff[i], 64);
+            // MesRet[63] = 0x00;
+            LogTrace() << &readBuff[i];
         }
         if (r >= iToReadLen) {
-            //ищем сигнатуру yN:
-            auto it = std::begin(readBuff);
-            toFind[1] = 0x30+findIdx;
-            it = std::search(it, std::end(readBuff), std::begin(toFind), std::end(toFind));
-            if (it != end(readBuff)) {
-                //найдено начало посылки. парсим
-                std::sscanf((char*)it, "%d,%d,%d,%d,%d,%d,%d,%d",
-                            &distance[findIdx][0],
-                            &distance[findIdx][1],
-                            &distance[findIdx][2],
-                            &distance[findIdx][3],
-                            &distance[findIdx][4],
-                            &distance[findIdx][5],
-                            &distance[findIdx][6],
-                            &distance[findIdx][7]);
-                bRet = true;
-            }
+            do {
+                //ищем сигнатуру yN:
+                toFind[1] = 0x30+findIdx;
+                itBegin = std::search(itBegin, std::end(readBuff), std::begin(toFind), std::end(toFind));
+                if (itBegin != end(readBuff)) {
+                    //найдено начало посылки.
+                    auto itEnd = std::search(itBegin, std::end(readBuff), std::begin(toFindEnd), std::end(toFindEnd));
+                    if (itEnd != end(readBuff)) {
+                        itBegin+=3;
+                        std::sscanf((char*)itBegin, "%d,%d,%d,%d,%d,%d,%d,%d",
+                                    &distance[findIdx][0],
+                                    &distance[findIdx][1],
+                                    &distance[findIdx][2],
+                                    &distance[findIdx][3],
+                                    &distance[findIdx][4],
+                                    &distance[findIdx][5],
+                                    &distance[findIdx][6],
+                                    &distance[findIdx][7]);
+                        bRet = true;
+                        ++findIdx;
+                    } else {
+                        bNextRead = true;
+                    }
+                } else {
+                    bNextRead = true;
+                }
+            } while((bNextRead != true) && (findIdx < 8));
+            i+=r;
+            bNextRead = false;
         } else {
             Sleep(100);
         }
     // } while ((!bRet));
-    } while (((time(NULL) - start) <= 5) && (!bRet) && (findIdx < 8)); //ждем 5 сек
+    } while (((time(NULL) - start) <= 5) && (findIdx < 8)); //ждем 5 сек
+    // } while (findIdx < 8); //ждем 5 сек
 
     // *MesRetLen=i;
     return bRet;
