@@ -295,7 +295,8 @@ bool TDF64Iface::seekAnswer()
     bool prefixFind = false;
     bool commandFind = false;
     unsigned long r; // фактически прочитано
-    std::array<uint8_t, 2> toFind = {'y','0'};
+    std::array<uint8_t, 3> toFind = {'y','0',':'};
+    uint8_t findIdx = 0;
     size_t iToReadLen = ((readBuff.size() > 64)?64:readBuff.size()); //читаем по строке
     do
     {
@@ -311,36 +312,26 @@ bool TDF64Iface::seekAnswer()
         if (r >= iToReadLen) {
             //ищем сигнатуру yN:
             auto it = std::begin(readBuff);
+            toFind[1] = 0x30+findIdx;
             it = std::search(it, std::end(readBuff), std::begin(toFind), std::end(toFind));
-            if (it != end(readBuff))
+            if (it != end(readBuff)) {
+                //найдено начало посылки. парсим
+                std::sscanf((char*)it, "%d,%d,%d,%d,%d,%d,%d,%d",
+                            &distance[findIdx][0],
+                            &distance[findIdx][1],
+                            &distance[findIdx][2],
+                            &distance[findIdx][3],
+                            &distance[findIdx][4],
+                            &distance[findIdx][5],
+                            &distance[findIdx][6],
+                            &distance[findIdx][7]);
                 bRet = true;
-
-            // if ((!prefixFind) && (MesRet[i] == prefix)) { //кажись то что надо
-            //     prefixFind = true;
-            //     iToReadLen = 2;
-            //     i += r;
-            // } else if ((!commandFind) && (MesRet[i+iToReadLen-1] == code)) {
-            //     commandFind = true;
-            //     if (MesRet[i+1] <= (iMaxReadLen - i - 2)) {
-            //         iToReadLen = MesRet[i];
-            //         i += r;
-            //     } else {
-            //         i = 0; //Мы это вычитать не сможем
-            //         prefixFind = false;
-            //         commandFind = false;
-            //     }
-            // } else if (prefixFind && commandFind) {
-            //     bRet = true;
-            // } else {
-            //     i = 0; //Миша всё по новой
-            //     prefixFind = false;
-            //     commandFind = false;
-            // }
+            }
         } else {
             Sleep(100);
         }
     // } while ((!bRet));
-    } while (((time(NULL) - start) <= 5) && (!bRet)); //ждем 5 сек
+    } while (((time(NULL) - start) <= 5) && (!bRet) && (findIdx < 8)); //ждем 5 сек
 
     // *MesRetLen=i;
     return bRet;
